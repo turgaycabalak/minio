@@ -1,15 +1,22 @@
 package com.document.document_service.service;
 
 import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
+import java.util.stream.StreamSupport;
+
+import com.document.document_service.dto.response.DocumentResponse;
 
 import io.minio.BucketExistsArgs;
 import io.minio.GetObjectArgs;
-import io.minio.GetObjectResponse;
+import io.minio.ListObjectsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.Result;
 import io.minio.messages.Bucket;
+import io.minio.messages.Item;
 
 import lombok.RequiredArgsConstructor;
 
@@ -69,5 +76,36 @@ public class DocumentService {
         .bucket(bucketName)
         .object(fileName)
         .build());
+  }
+
+  public List<DocumentResponse> listFiles(String bucketName) throws Exception {
+    Iterable<Result<Item>> results = minioClient.listObjects(ListObjectsArgs.builder()
+        .bucket(bucketName)
+        .build());
+
+    return StreamSupport.stream(results.spliterator(), false)
+        .map(result -> {
+          try {
+            Item item = result.get();
+            return DocumentResponse.builder()
+                .bucketName(bucketName)
+                .fileName(item.objectName())
+                .size(item.size())
+                .extension(getFileExtension(item.objectName()))
+                .createdDate(LocalDateTime.ofInstant(item.lastModified().toInstant(), ZoneOffset.UTC))
+                .build();
+          } catch (Exception e) {
+            throw new RuntimeException("Error processing item", e);
+          }
+        })
+        .toList();
+  }
+
+  private String getFileExtension(String fileName) {
+    int lastIndexOfDot = fileName.lastIndexOf(".");
+    if (lastIndexOfDot == -1) {
+      return "";
+    }
+    return fileName.substring(lastIndexOfDot + 1);
   }
 }

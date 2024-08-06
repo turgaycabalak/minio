@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
+import com.document.document_service.dto.response.DocumentResponse;
 import com.document.document_service.mapper.BucketMapper;
 import com.document.document_service.service.DocumentService;
 
@@ -70,5 +71,10 @@ public class DocumentController {
         .contentType(MediaType.parseMediaType("application/octet-stream"))
         .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + encodedFileName + "\"")
         .body(new InputStreamResource(data));
+  }
+
+  @GetMapping("/buckets/{bucketName}/files")
+  public List<DocumentResponse> listFiles(@PathVariable("bucketName") String bucketName) throws Exception {
+    return documentService.listFiles(bucketName);
   }
 }

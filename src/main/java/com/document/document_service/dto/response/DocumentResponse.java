@@ -6,8 +6,8 @@ import lombok.Builder;
 
 @Builder
 public record DocumentResponse(
-    String id,
-    String name,
+    String bucketName,
+    String fileName,
     Long size,
     String extension,
     LocalDateTime createdDate
