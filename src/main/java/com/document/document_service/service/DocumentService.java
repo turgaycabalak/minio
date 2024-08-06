@@ -1,9 +1,11 @@
 package com.document.document_service.service;
 
+import java.io.InputStream;
 import java.util.List;
-import java.util.UUID;
 
 import io.minio.BucketExistsArgs;
+import io.minio.GetObjectArgs;
+import io.minio.GetObjectResponse;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
@@ -52,14 +54,20 @@ public class DocumentService {
   }
 
   public MultipartFile uploadFile(String bucketName, MultipartFile file) throws Exception {
-    String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
     minioClient.putObject(PutObjectArgs.builder()
         .bucket(bucketName)
-        .object(fileName)
+        .object(file.getOriginalFilename())
         .contentType(file.getContentType())
         .stream(file.getInputStream(), file.getSize(), -1)
         .build());
 
     return file;
+  }
+
+  public InputStream downloadFile(String bucketName, String fileName) throws Exception {
+    return minioClient.getObject(GetObjectArgs.builder()
+        .bucket(bucketName)
+        .object(fileName)
+        .build());
   }
 }

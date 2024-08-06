@@ -2,6 +2,9 @@ package com.document.document_service.controller;
 
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
+import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
@@ -13,6 +16,7 @@ import io.minio.messages.Bucket;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -43,14 +47,28 @@ public class DocumentController {
     return BucketMapper.toDto(bucket);
   }
 
-  @PostMapping(value = "/{bucketName}", consumes = MULTIPART_FORM_DATA_VALUE)
+  @PostMapping(value = "/file/{bucketName}", consumes = MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<Resource> uploadFile(@PathVariable("bucketName") String bucketName,
                                              @RequestPart("file") MultipartFile file) throws Exception {
     MultipartFile uploadedFile = documentService.uploadFile(bucketName, file);
+    String encodedFileName = URLEncoder.encode(Objects.requireNonNull(uploadedFile.getOriginalFilename()),
+        StandardCharsets.UTF_8);
+
     return ResponseEntity.ok()
         .contentType(MediaType.valueOf(Objects.requireNonNull(uploadedFile.getContentType())))
-        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + uploadedFile.getOriginalFilename() + "\"")
+        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + encodedFileName + "\"")
         .body(new ByteArrayResource(uploadedFile.getBytes()));
   }
 
+  @GetMapping("/file/{bucketName}/{fileName}")
+  public ResponseEntity<Resource> downloadFile(@PathVariable("bucketName") String bucketName,
+                                               @PathVariable("fileName") String fileName) throws Exception {
+    InputStream data = documentService.downloadFile(bucketName, fileName);
+    String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
+
+    return ResponseEntity.ok()
+        .contentType(MediaType.parseMediaType("application/octet-stream"))
+        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + encodedFileName + "\"")
+        .body(new InputStreamResource(data));
+  }
 }
