@@ -1,0 +1,8 @@
+docker run --name minio \
+    --publish 9000:9000 \
+    --publish 9001:9001 \
+    --volume /path/to/minio-persistence:/bitnami/minio/data \
+    --user root \
+    --env MINIO_ROOT_USER=myaccesskey \
+    --env MINIO_ROOT_PASSWORD=mysecretkey \
+    -d bitnami/minio:latest
