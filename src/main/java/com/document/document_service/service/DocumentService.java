@@ -1,6 +1,7 @@
 package com.document.document_service.service;
 
 import java.util.List;
+import java.util.UUID;
 
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
@@ -51,9 +52,10 @@ public class DocumentService {
   }
 
   public MultipartFile uploadFile(String bucketName, MultipartFile file) throws Exception {
+    String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
     minioClient.putObject(PutObjectArgs.builder()
         .bucket(bucketName)
-        .object(file.getOriginalFilename())
+        .object(fileName)
         .contentType(file.getContentType())
         .stream(file.getInputStream(), file.getSize(), -1)
         .build());
