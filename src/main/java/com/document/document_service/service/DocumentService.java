@@ -3,10 +3,15 @@ package com.document.document_service.service;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import com.document.document_service.dto.response.DocumentResponse;
+import com.document.document_service.dto.response.OldDocumentVersion;
 
 import io.minio.BucketExistsArgs;
 import io.minio.GetObjectArgs;
@@ -15,8 +20,10 @@ import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.Result;
+import io.minio.SetBucketVersioningArgs;
 import io.minio.messages.Bucket;
 import io.minio.messages.Item;
+import io.minio.messages.VersioningConfiguration;
 
 import lombok.RequiredArgsConstructor;
 
@@ -54,6 +61,14 @@ public class DocumentService {
         .bucket(bucketName)
         .build());
 
+    VersioningConfiguration versioningConfig =
+        new VersioningConfiguration(VersioningConfiguration.Status.ENABLED, false);
+    SetBucketVersioningArgs versioningArgs = SetBucketVersioningArgs.builder()
+        .bucket(bucketName)
+        .config(versioningConfig)
+        .build();
+    minioClient.setBucketVersioning(versioningArgs);
+
     return minioClient.listBuckets().stream()
         .filter(bucket -> bucket.name().equals(bucketName))
         .findFirst()
@@ -81,22 +96,59 @@ public class DocumentService {
   public List<DocumentResponse> listFiles(String bucketName) throws Exception {
     Iterable<Result<Item>> results = minioClient.listObjects(ListObjectsArgs.builder()
         .bucket(bucketName)
+        .includeVersions(true)
         .build());
 
-    return StreamSupport.stream(results.spliterator(), false)
-        .map(result -> {
+    Map<String, List<Item>> groupedItems = StreamSupport.stream(results.spliterator(), false)
+        .map(itemResult -> {
           try {
-            Item item = result.get();
-            return DocumentResponse.builder()
-                .bucketName(bucketName)
-                .fileName(item.objectName())
-                .size(item.size())
-                .extension(getFileExtension(item.objectName()))
-                .createdDate(LocalDateTime.ofInstant(item.lastModified().toInstant(), ZoneOffset.UTC))
-                .build();
+            return itemResult.get();
           } catch (Exception e) {
-            throw new RuntimeException("Error processing item", e);
+            throw new RuntimeException(e);
           }
+        })
+        .collect(Collectors.groupingBy(
+            Item::objectName,
+            Collectors.mapping(
+                item -> item,
+                Collectors.collectingAndThen(
+                    Collectors.toList(),
+                    list -> list.stream()
+                        .sorted(Comparator.comparing(Item::lastModified))
+                        .toList()
+                )
+            )
+        ));
+
+    return groupedItems.values().stream()
+        .map(items -> {
+          Item itemLastVersioned = items.getLast(); // sorted -> v1, v2, v3 ... v6
+
+          List<Item> newToOld = items.stream()
+              .filter(item -> item != itemLastVersioned) // v6 removed from list
+              .toList();
+
+          List<OldDocumentVersion> oldDocumentVersions = new ArrayList<>();
+          for (int i = newToOld.size(); i > 0; i--) {
+            Item item = newToOld.get(i - 1);
+            oldDocumentVersions.add(OldDocumentVersion.builder()
+                .size(item.size())
+                .createdDate(LocalDateTime.ofInstant(item.lastModified().toInstant(), ZoneOffset.UTC))
+                .versionId(item.versionId())
+                .version("v" + (i))
+                .build());
+          }
+
+          return DocumentResponse.builder()
+              .bucketName(bucketName)
+              .fileName(itemLastVersioned.objectName())
+              .size(itemLastVersioned.size())
+              .extension(getFileExtension(itemLastVersioned.objectName()))
+              .createdDate(LocalDateTime.ofInstant(itemLastVersioned.lastModified().toInstant(), ZoneOffset.UTC))
+              .versionId(itemLastVersioned.versionId())
+              .version("v" + (items.size()))
+              .oldDocumentVersions(oldDocumentVersions)
+              .build();
         })
         .toList();
   }

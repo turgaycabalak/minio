@@ -1,4 +1,4 @@
-package com.document.document_service.controller;
+package com.document.document_service.dto.response;
 
 import java.time.LocalDateTime;
 

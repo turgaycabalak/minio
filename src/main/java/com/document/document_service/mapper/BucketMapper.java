@@ -3,7 +3,7 @@ package com.document.document_service.mapper;
 import java.util.List;
 import java.util.Objects;
 
-import com.document.document_service.controller.BucketResponse;
+import com.document.document_service.dto.response.BucketResponse;
 
 import io.minio.messages.Bucket;
 
