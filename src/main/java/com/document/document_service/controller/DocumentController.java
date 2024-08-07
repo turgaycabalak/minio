@@ -13,7 +13,6 @@ import com.document.document_service.dto.response.DocumentResponse;
 import com.document.document_service.mapper.BucketMapper;
 import com.document.document_service.service.DocumentService;
 
-import io.minio.MinioClient;
 import io.minio.messages.Bucket;
 
 import lombok.RequiredArgsConstructor;
@@ -38,7 +37,6 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("api/v1/document")
 public class DocumentController {
   private final DocumentService documentService;
-  private final MinioClient minioClient;
 
   @GetMapping("/buckets")
   public List<BucketResponse> getAllBuckets() {
