@@ -86,11 +86,16 @@ public class DocumentService {
     return file;
   }
 
-  public InputStream downloadFile(String bucketName, String fileName) throws Exception {
-    return minioClient.getObject(GetObjectArgs.builder()
+  public InputStream downloadFile(String bucketName, String fileName, String versionId) throws Exception {
+    GetObjectArgs.Builder getObjectArgsBuilder = GetObjectArgs.builder()
         .bucket(bucketName)
-        .object(fileName)
-        .build());
+        .object(fileName);
+
+    if (versionId != null && !versionId.isEmpty()) {
+      getObjectArgsBuilder.versionId(versionId);
+    }
+
+    return minioClient.getObject(getObjectArgsBuilder.build());
   }
 
   public List<DocumentResponse> listFiles(String bucketName) throws Exception {
@@ -104,7 +109,7 @@ public class DocumentService {
           try {
             return itemResult.get();
           } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error processing item", e);
           }
         })
         .collect(Collectors.groupingBy(

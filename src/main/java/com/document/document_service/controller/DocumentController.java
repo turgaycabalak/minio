@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -66,8 +67,10 @@ public class DocumentController {
 
   @GetMapping("/file/{bucketName}/{fileName}")
   public ResponseEntity<Resource> downloadFile(@PathVariable("bucketName") String bucketName,
-                                               @PathVariable("fileName") String fileName) throws Exception {
-    InputStream data = documentService.downloadFile(bucketName, fileName);
+                                               @PathVariable("fileName") String fileName,
+                                               @RequestParam(value = "versionId", required = false) String versionId)
+      throws Exception {
+    InputStream data = documentService.downloadFile(bucketName, fileName, versionId);
     String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
 
     return ResponseEntity.ok()
