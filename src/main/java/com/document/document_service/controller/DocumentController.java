@@ -8,12 +8,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
-import com.document.document_service.dto.response.BucketResponse;
 import com.document.document_service.dto.response.DocumentResponse;
-import com.document.document_service.mapper.BucketMapper;
 import com.document.document_service.service.DocumentService;
-
-import io.minio.messages.Bucket;
 
 import lombok.RequiredArgsConstructor;
 
@@ -37,18 +33,6 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("api/v1/document")
 public class DocumentController {
   private final DocumentService documentService;
-
-  @GetMapping("/buckets")
-  public List<BucketResponse> getAllBuckets() {
-    List<Bucket> buckets = documentService.getAllBuckets();
-    return BucketMapper.toDtoList(buckets);
-  }
-
-  @PostMapping("/bucket/{bucketName}")
-  public BucketResponse saveBucket(@PathVariable("bucketName") String bucketName) throws Exception {
-    Bucket bucket = documentService.saveBucket(bucketName);
-    return BucketMapper.toDto(bucket);
-  }
 
   @PostMapping(value = "/file/{bucketName}", consumes = MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<Resource> uploadFile(@PathVariable("bucketName") String bucketName,
@@ -81,4 +65,9 @@ public class DocumentController {
   public List<DocumentResponse> listFiles(@PathVariable("bucketName") String bucketName) throws Exception {
     return documentService.listFiles(bucketName);
   }
+
+  //todo: delete file by id
+  //todo: delete all files (not bucket)
+  //todo: copy file to another bucket
+  //todo: move file to another bucket
 }
