@@ -34,6 +34,12 @@ public class BucketController {
     return bucketService.getAllBucketDetails();
   }
 
+  @GetMapping("/detail/{bucketName}")
+  public BucketResponse getAllBucketDetailsByName(@PathVariable("bucketName") String bucketName)
+      throws Exception {
+    return bucketService.getAllBucketDetailsByName(bucketName);
+  }
+
   @PostMapping("/{bucketName}")
   public BucketResponse saveBucket(@PathVariable("bucketName") String bucketName) throws Exception {
     Bucket bucket = bucketService.saveBucket(bucketName);
@@ -44,8 +50,4 @@ public class BucketController {
   public void deleteBucket(@PathVariable("bucketName") String bucketName) throws Exception {
     bucketService.deleteBucket(bucketName);
   }
-
-
-  //todo: update bucket name (BU YOK)
-  //todo: bucketName'e göre getBucketInfo endpoint'i yaz
 }

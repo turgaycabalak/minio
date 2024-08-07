@@ -26,6 +26,35 @@ import org.springframework.stereotype.Service;
 public class BucketService {
   private final MinioClient minioClient;
 
+
+  private BucketResponse getBucketResponse(Bucket bucketByName) {
+    Iterable<Result<Item>> results = minioClient.listObjects(ListObjectsArgs.builder()
+        .bucket(bucketByName.name())
+        .includeVersions(true)
+        .build());
+    List<Item> itemList = StreamSupport.stream(results.spliterator(), false)
+        .map(itemResult -> {
+          try {
+            return itemResult.get();
+          } catch (Exception e) {
+            throw new RuntimeException("Error processing item", e);
+          }
+        })
+        .toList();
+
+    long totalSize = itemList.stream()
+        .map(Item::size)
+        .reduce(0L, Long::sum);
+    double totalSizeInKib = totalSize / 1024.0; // byte to kib
+
+    return BucketResponse.builder()
+        .name(bucketByName.name())
+        .creationDate(bucketByName.creationDate().toLocalDateTime())
+        .fileCount((long) itemList.size())
+        .totalSize(totalSizeInKib)
+        .build();
+  }
+
   public List<Bucket> getAllBuckets() {
     try {
       return minioClient.listBuckets();
@@ -38,34 +67,19 @@ public class BucketService {
     List<Bucket> buckets = minioClient.listBuckets();
 
     return buckets.stream()
-        .map(bucket -> {
-          Iterable<Result<Item>> results = minioClient.listObjects(ListObjectsArgs.builder()
-              .bucket(bucket.name())
-              .includeVersions(true)
-              .build());
-          List<Item> itemList = StreamSupport.stream(results.spliterator(), false)
-              .map(itemResult -> {
-                try {
-                  return itemResult.get();
-                } catch (Exception e) {
-                  throw new RuntimeException("Error processing item", e);
-                }
-              })
-              .toList();
-
-          long totalSize = itemList.stream()
-              .map(Item::size)
-              .reduce(0L, Long::sum);
-          double totalSizeInKib = totalSize / 1024.0; // byte to kib
-
-          return BucketResponse.builder()
-              .name(bucket.name())
-              .creationDate(bucket.creationDate().toLocalDateTime())
-              .fileCount((long) itemList.size())
-              .totalSize(totalSizeInKib)
-              .build();
-        })
+        .map(this::getBucketResponse)
         .toList();
+  }
+
+  public BucketResponse getAllBucketDetailsByName(String bucketName) throws Exception {
+    List<Bucket> buckets = minioClient.listBuckets();
+
+    Bucket bucketByName = buckets.stream()
+        .filter(bucket -> bucket.name().equals(bucketName))
+        .findFirst()
+        .orElseThrow(() -> new IllegalStateException("Bucket not found by name: " + bucketName));
+
+    return getBucketResponse(bucketByName);
   }
 
   public Bucket saveBucket(String bucketName) throws Exception {
