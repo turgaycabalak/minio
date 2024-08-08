@@ -35,9 +35,9 @@ public class BucketController {
   }
 
   @GetMapping("/detail/{bucketName}")
-  public BucketResponse getAllBucketDetailsByName(@PathVariable("bucketName") String bucketName)
+  public BucketResponse getBucketDetailsByName(@PathVariable("bucketName") String bucketName)
       throws Exception {
-    return bucketService.getAllBucketDetailsByName(bucketName);
+    return bucketService.getBucketDetailsByName(bucketName);
   }
 
   @PostMapping("/{bucketName}")

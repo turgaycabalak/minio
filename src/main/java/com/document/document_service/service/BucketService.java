@@ -71,7 +71,7 @@ public class BucketService {
         .toList();
   }
 
-  public BucketResponse getAllBucketDetailsByName(String bucketName) throws Exception {
+  public BucketResponse getBucketDetailsByName(String bucketName) throws Exception {
     List<Bucket> buckets = minioClient.listBuckets();
 
     Bucket bucketByName = buckets.stream()
