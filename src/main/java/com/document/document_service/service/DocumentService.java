@@ -190,5 +190,33 @@ public class DocumentService {
     return getDocument(toBucket, fileName);
   }
 
+  public void deleteFile(String bucketName, String fileName) {
+    Iterable<Result<Item>> results = minioClient.listObjects(ListObjectsArgs.builder()
+        .bucket(bucketName)
+        .includeVersions(true)
+        .build());
 
+    StreamSupport.stream(results.spliterator(), false)
+        .map(itemResult -> {
+          try {
+            return itemResult.get();
+          } catch (Exception e) {
+            throw new RuntimeException("Error processing item", e);
+          }
+        })
+        .filter(item -> item.objectName().equals(fileName))
+        .forEach(item -> {
+          try {
+            minioClient.removeObject(
+                RemoveObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(fileName)
+                    .versionId(item.versionId())
+                    .build()
+            );
+          } catch (Exception e) {
+            throw new RuntimeException("Error during moving file", e);
+          }
+        });
+  }
 }

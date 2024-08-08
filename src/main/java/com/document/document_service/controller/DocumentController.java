@@ -19,6 +19,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -81,6 +82,12 @@ public class DocumentController {
   }
 
   //todo: delete file by id
+  @DeleteMapping("{bucketName}/file/{fileName}")
+  public void deleteFile(@PathVariable("bucketName") String bucketName,
+                         @PathVariable("fileName") String fileName) throws Exception {
+    documentService.deleteFile(bucketName, fileName);
+  }
+
   //todo: delete all files (not bucket)
   //todo: copy file to another bucket
 }
