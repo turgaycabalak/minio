@@ -81,6 +81,13 @@ public class DocumentController {
     return documentService.moveFile(fileName, fromBucket, toBucket);
   }
 
+  @PostMapping("/file/copy/{fileName}/{fromBucket}/{toBucket}")
+  public DocumentResponse copyFile(@PathVariable("fileName") String fileName,
+                                   @PathVariable("fromBucket") String fromBucket,
+                                   @PathVariable("toBucket") String toBucket) throws Exception {
+    return documentService.copyFile(fileName, fromBucket, toBucket);
+  }
+
   @DeleteMapping("{bucketName}/file/{fileName}")
   public void deleteFile(@PathVariable("bucketName") String bucketName,
                          @PathVariable("fileName") String fileName) throws Exception {
@@ -91,6 +98,4 @@ public class DocumentController {
   public void deleteAllFiles(@PathVariable("bucketName") String bucketName) throws Exception {
     documentService.deleteAllFiles(bucketName);
   }
-
-  //todo: copy file to another bucket
 }
