@@ -84,38 +84,8 @@ public class DocumentService {
         ));
 
     return groupedItems.values().stream()
-        .map(items -> {
-          Item itemLastVersioned = items.getLast(); // sorted -> v1, v2, v3 ... v6
-
-          List<Item> newToOld = items.stream()
-              .filter(item -> item != itemLastVersioned) // v6 removed from list
-              .toList();
-
-          List<OldDocumentVersion> oldDocumentVersions = new ArrayList<>();
-          for (int i = newToOld.size(); i > 0; i--) {
-            Item item = newToOld.get(i - 1);
-            oldDocumentVersions.add(OldDocumentVersion.builder()
-                .size(item.size())
-                .createdDate(LocalDateTime.ofInstant(item.lastModified().toInstant(), ZoneOffset.UTC))
-                .versionId(item.versionId())
-                .version("v" + (i))
-                .build());
-          }
-
-          return DocumentResponse.builder()
-              .bucketName(bucketName)
-              .fileName(itemLastVersioned.objectName())
-              .size(itemLastVersioned.size())
-              .extension(getFileExtension(itemLastVersioned.objectName()))
-              .createdDate(LocalDateTime.ofInstant(itemLastVersioned.lastModified().toInstant(), ZoneOffset.UTC))
-              .versionId(itemLastVersioned.versionId())
-              .version("v" + (items.size()))
-              .oldDocumentVersions(oldDocumentVersions)
-              .build();
-        })
+        .map(items -> getDocumentResponse(bucketName, items))
         .toList();
-
-
   }
 
   public DocumentResponse getDocument(String bucketName, String fileName) {
@@ -136,6 +106,10 @@ public class DocumentService {
         .sorted(Comparator.comparing(Item::lastModified)) // v1, v2, v3, v4
         .toList();
 
+    return getDocumentResponse(bucketName, itemsByFileName);
+  }
+
+  private DocumentResponse getDocumentResponse(String bucketName, List<Item> itemsByFileName) {
     Item itemLastVersioned = itemsByFileName.getLast(); // v4
     List<Item> newToOld = itemsByFileName.stream()
         .filter(item -> item != itemLastVersioned) // v4 removed from list
@@ -212,7 +186,6 @@ public class DocumentService {
             throw new RuntimeException("Error during moving file", e);
           }
         });
-
 
     return getDocument(toBucket, fileName);
   }
