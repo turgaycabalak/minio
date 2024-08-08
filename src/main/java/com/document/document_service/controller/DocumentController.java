@@ -81,13 +81,16 @@ public class DocumentController {
     return documentService.moveFile(fileName, fromBucket, toBucket);
   }
 
-  //todo: delete file by id
   @DeleteMapping("{bucketName}/file/{fileName}")
   public void deleteFile(@PathVariable("bucketName") String bucketName,
                          @PathVariable("fileName") String fileName) throws Exception {
     documentService.deleteFile(bucketName, fileName);
   }
 
-  //todo: delete all files (not bucket)
+  @DeleteMapping("{bucketName}")
+  public void deleteAllFiles(@PathVariable("bucketName") String bucketName) throws Exception {
+    documentService.deleteAllFiles(bucketName);
+  }
+
   //todo: copy file to another bucket
 }
